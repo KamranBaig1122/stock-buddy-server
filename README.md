@@ -41,7 +41,8 @@ Authorization: Bearer YOUR_JWT_TOKEN
   "email": "user@example.com",
   "password": "password123",
   "name": "John Doe",
-  "role": "admin" // or "staff"
+  "role": "admin", // or "staff"
+  "noti": "enabled" // string optional - notification preference
 }
 ```
 
@@ -66,7 +67,8 @@ Authorization: Bearer YOUR_JWT_TOKEN
 ```json
 {
   "email": "user@example.com",
-  "password": "password123"
+  "password": "password123",
+  "noti": "disabled" // string optional - update notification preference
 }
 ```
 

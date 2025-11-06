@@ -8,7 +8,7 @@ import { sendPasswordResetEmail } from '../utils/emailService';
 
 export const register = async (req: Request, res: Response) => {
   try {
-    const { email, password, name, role } = req.body;
+    const { email, password, name, role, noti } = req.body;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -20,7 +20,8 @@ export const register = async (req: Request, res: Response) => {
       email,
       password: hashedPassword,
       name,
-      role: role || 'staff'
+      role: role || 'staff',
+      ...(noti !== undefined && { noti })
     });
 
     await user.save();
@@ -48,7 +49,7 @@ export const register = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, noti } = req.body;
 
     const user = await User.findOne({ email, isActive: true });
     if (!user) {
@@ -61,6 +62,9 @@ export const login = async (req: Request, res: Response) => {
     }
 
     user.lastLogin = new Date();
+    if (noti !== undefined) {
+      user.noti = noti;
+    }
     await user.save();
 
     const token = jwt.sign(
