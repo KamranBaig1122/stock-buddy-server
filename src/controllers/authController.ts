@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
 import User from '../models/User';
 import { AuthRequest } from '../middleware/auth';
 import { sendPasswordResetEmail } from '../utils/emailService';
@@ -98,12 +97,14 @@ export const forgotPassword = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    user.resetToken = resetToken;
-    user.resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const hashedOtp = await bcrypt.hash(otp, 12);
+
+    user.resetToken = hashedOtp;
+    user.resetTokenExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
     await user.save();
 
-    await sendPasswordResetEmail(user.email, resetToken, user.name);
+    await sendPasswordResetEmail(user.email, otp, user.name);
     res.json({ message: 'Password reset email sent successfully' });
   } catch (error) {
     console.error('Password reset error:', error);
@@ -113,15 +114,21 @@ export const forgotPassword = async (req: Request, res: Response) => {
 
 export const resetPassword = async (req: Request, res: Response) => {
   try {
-    const { resetToken, newPassword } = req.body;
+    const { email, otp, newPassword } = req.body;
 
-    const user = await User.findOne({
-      resetToken,
-      resetTokenExpiry: { $gt: new Date() }
-    });
+    const user = await User.findOne({ email, resetTokenExpiry: { $gt: new Date() } });
 
     if (!user) {
-      return res.status(400).json({ error: 'Invalid or expired reset token' });
+      return res.status(400).json({ error: 'Invalid or expired OTP' });
+    }
+
+    if (!user.resetToken) {
+      return res.status(400).json({ error: 'OTP not generated for this user' });
+    }
+
+    const isValidOtp = await bcrypt.compare(otp, user.resetToken);
+    if (!isValidOtp) {
+      return res.status(400).json({ error: 'Invalid or expired OTP' });
     }
 
     user.password = await bcrypt.hash(newPassword, 12);

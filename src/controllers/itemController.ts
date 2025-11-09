@@ -1,7 +1,7 @@
 import { Response } from 'express';
+import crypto from 'crypto';
 import { AuthRequest } from '../middleware/auth';
 import Item from '../models/Item';
-import Location from '../models/Location';
 
 export const createItem = async (req: AuthRequest, res: Response) => {
   try {
@@ -97,5 +97,65 @@ export const searchItems = async (req: AuthRequest, res: Response) => {
     res.json(items);
   } catch (error) {
     res.status(500).json({ error: 'Failed to search items' });
+  }
+};
+
+export const getItemByBarcode = async (req: AuthRequest, res: Response) => {
+  try {
+    const { barcode } = req.params;
+
+    const item = await Item.findOne({ barcode })
+      .populate('locations.locationId', 'name')
+      .populate('createdBy', 'name');
+
+    if (!item) {
+      return res.status(404).json({ error: 'Item not found for the provided barcode' });
+    }
+
+    res.json(item);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch item by barcode' });
+  }
+};
+
+const generateUniqueBarcode = async () => {
+  let barcode: string;
+  let exists = true;
+
+  do {
+    barcode = crypto.randomBytes(4).toString('hex').toUpperCase();
+    exists = !!(await Item.exists({ barcode }));
+  } while (exists);
+
+  return barcode;
+};
+
+export const assignBarcode = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { barcode: providedBarcode, overwrite } = req.body;
+
+    const item = await Item.findById(id);
+    if (!item) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    if (item.barcode && !overwrite) {
+      return res.status(400).json({ error: 'Item already has a barcode. Set overwrite=true to replace it.' });
+    }
+
+    const barcode = providedBarcode || await generateUniqueBarcode();
+
+    const duplicate = await Item.findOne({ barcode, _id: { $ne: id } });
+    if (duplicate) {
+      return res.status(400).json({ error: 'Barcode already assigned to another item' });
+    }
+
+    item.barcode = barcode;
+    await item.save();
+
+    res.json({ message: 'Barcode assigned successfully', item });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to assign barcode' });
   }
 };

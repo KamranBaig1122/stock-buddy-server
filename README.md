@@ -104,16 +104,21 @@ Authorization: Bearer YOUR_JWT_TOKEN
 }
 ```
 
+> A 6-digit One-Time Passcode (OTP) valid for 10 minutes is emailed to the user.
+
 ### 4. Reset Password
 **POST** `/auth/reset-password`
 
 **Request Body:**
 ```json
 {
-  "resetToken": "token_from_email",
+  "email": "user@example.com",
+  "otp": "123456",
   "newPassword": "newPassword123"
 }
 ```
+
+> Supply the OTP received via email along with the associated account email address.
 
 **Response (200):**
 ```json
@@ -247,13 +252,33 @@ Authorization: Bearer YOUR_JWT_TOKEN
 
 **Response (200):** Same as Get All Items but filtered
 
-### 4. Get Item by ID
+### 4. Lookup Item by Barcode
+**GET** `/items/barcode/:barcode`
+**Headers:** `Authorization: Bearer TOKEN`
+
+**Response (200):** Same as Get Item by ID
+
+### 5. Assign or Generate Barcode (Admin Only)
+**POST** `/items/:id/barcode`
+**Headers:** `Authorization: Bearer TOKEN`
+
+**Request Body:**
+```json
+{
+  "barcode": "OPTIONAL_CUSTOM_CODE",
+  "overwrite": false
+}
+```
+
+If `barcode` is omitted, the server generates a unique uppercase code. Set `overwrite` to `true` to replace an existing barcode.
+
+### 6. Get Item by ID
 **GET** `/items/:id`
 **Headers:** `Authorization: Bearer TOKEN`
 
 **Response (200):** Single item object
 
-### 5. Update Item (Admin Only)
+### 7. Update Item (Admin Only)
 **PUT** `/items/:id`
 **Headers:** `Authorization: Bearer TOKEN`
 
@@ -329,7 +354,40 @@ Authorization: Bearer YOUR_JWT_TOKEN
 }
 ```
 
-### 3. Get Stock by Location
+### 3. Review Transfer Requests (Admin Only)
+**POST** `/stock/transfer/review`
+**Headers:** `Authorization: Bearer TOKEN`
+
+**Request Body:**
+```json
+{
+  "transactionId": "transaction_id",
+  "approved": true,
+  "note": "Optional comment"
+}
+```
+
+**Response (200):**
+```json
+{
+  "message": "Stock transfer approved successfully",
+  "transaction": {
+    "_id": "transaction_id",
+    "status": "approved",
+    "approvedBy": "admin_user_id"
+  }
+}
+```
+
+Set `approved` to `false` to reject a pending transfer.
+
+### 4. Get Pending Transfers (Admin Only)
+**GET** `/stock/transfers/pending`
+**Headers:** `Authorization: Bearer TOKEN`
+
+**Response (200):** Array of pending transfer transactions with populated item, location, and requester details.
+
+### 5. Get Stock by Location
 **GET** `/stock/location/:locationId`
 **Headers:** `Authorization: Bearer TOKEN`
 
@@ -730,6 +788,7 @@ NODE_ENV=development
 # Email Configuration (Gmail)
 EMAIL_USER=your-gmail@gmail.com
 EMAIL_APP_PASSWORD=your-gmail-app-password
+FCM_SERVER_KEY=your-firebase-server-key
 FRONTEND_URL=http://localhost:3000
 ```
 
