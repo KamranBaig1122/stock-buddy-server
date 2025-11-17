@@ -158,3 +158,37 @@ export const getProfile = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ error: 'Failed to get profile' });
   }
 };
+
+export const verifyToken = async (req: Request, res: Response) => {
+  try {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({ valid: false, error: 'Token not provided' });
+    }
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as { userId: string };
+      const user = await User.findById(decoded.userId);
+      
+      if (!user || !user.isActive) {
+        return res.status(401).json({ valid: false, error: 'Invalid or inactive user' });
+      }
+
+      res.json({ 
+        valid: true, 
+        user: {
+          id: user._id,
+          email: user.email,
+          name: user.name,
+          role: user.role
+        }
+      });
+    } catch (error) {
+      return res.status(401).json({ valid: false, error: 'Invalid or expired token' });
+    }
+  } catch (error) {
+    res.status(500).json({ valid: false, error: 'Token verification failed' });
+  }
+};

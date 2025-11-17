@@ -144,6 +144,39 @@ Authorization: Bearer YOUR_JWT_TOKEN
 }
 ```
 
+### 6. Verify Token
+**POST** `/auth/verify-token`
+**Headers:** `Authorization: Bearer TOKEN`
+
+**Response (200) - Valid Token:**
+```json
+{
+  "valid": true,
+  "user": {
+    "id": "user_id",
+    "email": "user@example.com",
+    "name": "John Doe",
+    "role": "admin"
+  }
+}
+```
+
+**Response (401) - Invalid Token:**
+```json
+{
+  "valid": false,
+  "error": "Invalid or expired token"
+}
+```
+
+**Response (401) - Token Not Provided:**
+```json
+{
+  "valid": false,
+  "error": "Token not provided"
+}
+```
+
 ---
 
 ## 📊 Dashboard Endpoint
@@ -199,7 +232,8 @@ Authorization: Bearer YOUR_JWT_TOKEN
   "sku": "DELL-001",
   "barcode": "123456789", // optional
   "unit": "pieces",
-  "threshold": 5
+  "threshold": 5,
+  "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..." // optional - base64 encoded image
 }
 ```
 
@@ -214,6 +248,7 @@ Authorization: Bearer YOUR_JWT_TOKEN
     "barcode": "123456789",
     "unit": "pieces",
     "threshold": 5,
+    "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...",
     "status": "active",
     "locations": [],
     "createdBy": "user_id"

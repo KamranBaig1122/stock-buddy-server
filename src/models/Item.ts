@@ -7,6 +7,7 @@ export interface IItem extends Document {
   unit: string;
   threshold: number;
   status: 'active' | 'inactive';
+  image?: string; // base64 encoded image
   locations: {
     locationId: mongoose.Types.ObjectId;
     quantity: number;
@@ -23,6 +24,7 @@ const ItemSchema = new Schema<IItem>({
   unit: { type: String, required: true },
   threshold: { type: Number, required: true, min: 0 },
   status: { type: String, enum: ['active', 'inactive'], default: 'active' },
+  image: { type: String }, // base64 encoded image
   locations: [{
     locationId: { type: Schema.Types.ObjectId, ref: 'Location', required: true },
     quantity: { type: Number, required: true, min: 0 }

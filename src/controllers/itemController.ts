@@ -5,7 +5,7 @@ import Item from '../models/Item';
 
 export const createItem = async (req: AuthRequest, res: Response) => {
   try {
-    const { name, sku, barcode, unit, threshold } = req.body;
+    const { name, sku, barcode, unit, threshold, image } = req.body;
     
     const item = new Item({
       name,
@@ -13,6 +13,7 @@ export const createItem = async (req: AuthRequest, res: Response) => {
       barcode,
       unit,
       threshold,
+      image, // base64 encoded image
       locations: [],
       createdBy: req.user?._id
     });
